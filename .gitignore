@@ -1,0 +1,4 @@
+data/*.json
+photos/_trash/
+node_modules/
+*.log

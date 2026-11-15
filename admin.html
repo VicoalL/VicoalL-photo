@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后台 — VicoalL</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{--mono:"JetBrains Mono",ui-monospace,monospace;--sans:"Inter Tight",system-ui,"Microsoft YaHei",sans-serif;--hair:rgb(255 255 255 / .14);--dim:rgb(255 255 255 / .5)}
+*{box-sizing:border-box}
+html,body{margin:0;background:#08080b;color:#f2f2f4;font-family:var(--sans)}
+button,input,select,textarea{font-family:inherit}
+.wrap{max-width:1500px;margin:0 auto;padding:0 clamp(14px,2.4vw,28px)}
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px clamp(14px,2.4vw,28px);border-bottom:1px solid var(--hair);
+  background:rgba(8,8,11,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  font-family:var(--mono);font-size:11px}
+.top a{color:inherit;text-decoration:none;opacity:.85}
+.btn{cursor:pointer;padding:9px 18px;border-radius:999px;border:1px solid #fff;background:#fff;color:#08080b;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn.ghost{background:transparent;color:#f2f2f4;border-color:var(--hair)}
+.btn.tiny{padding:5px 10px;font-size:9.5px;border-radius:7px;letter-spacing:.04em}
+input,select,textarea{padding:9px 11px;border-radius:8px;background:rgba(0,0,0,.5);color:#f2f2f4;
+  border:1px solid var(--hair);outline:none;font-size:13px}
+input:focus,select:focus,textarea:focus{border-color:rgba(255,255,255,.55)}
+.login{max-width:420px;margin:16vh auto;text-align:center}
+.login h1{font-size:26px;font-weight:400;margin:0 0 8px}
+.login p{font-family:var(--mono);font-size:11px;color:var(--dim);margin:0 0 22px}
+.login .row{display:flex;gap:8px}
+.login input{flex:1}
+.err{color:#ff9b9b;font-family:var(--mono);font-size:11px;min-height:16px;margin-top:10px}
+
+.main{display:none;padding-bottom:80px}
+.main.on{display:block}
+h2{font-size:20px;font-weight:400;margin:26px 0 12px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+.tab{cursor:pointer;padding:8px 15px;border-radius:999px;border:1px solid var(--hair);background:transparent;
+  color:var(--dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.tab.on{background:#fff;color:#08080b;border-color:#fff}
+
+.panel{border:1px solid var(--hair);border-radius:12px;padding:16px;margin-top:14px;background:rgba(255,255,255,.035)}
+.knobs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.knob{display:flex;flex-direction:column;gap:6px}
+.knob label{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:16px}
+.card{border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03);
+  display:flex;flex-direction:column}
+.card.off{opacity:.35}
+.card .thumb{position:relative;aspect-ratio:4/3;background:#111;overflow:hidden}
+.card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.card .badge{position:absolute;top:6px;left:6px;padding:3px 7px;border-radius:5px;background:#fff;color:#08080b;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.05em}
+.card .ops{display:flex;flex-wrap:wrap;gap:4px;padding:7px}
+.card .cap{padding:0 7px 8px}
+.card .cap input{width:100%;font-size:11px;padding:6px 8px}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;gap:12px;
+  padding:12px clamp(14px,2.4vw,28px);border-top:1px solid var(--hair);
+  background:rgba(8,8,11,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  font-family:var(--mono);font-size:11px}
+.bar .state{color:var(--dim);flex:1}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a href="index.html">← 回网站</a>
+  <span id="who">后台</span>
+</header>
+
+<section class="login" id="login">
+  <h1>后台管理</h1>
+  <p>输入管理员密码</p>
+  <div class="row">
+    <input id="pass" type="password" placeholder="管理员密码">
+    <button class="btn" id="btnLogin" type="button">进入</button>
+  </div>
+  <p class="err" id="err"></p>
+</section>
+
+<div class="main" id="main">
+  <div class="wrap">
+    <div class="panel" id="pendingPanel" style="display:none">
+      <h2 style="margin-top:0">待审核的投稿（<span id="pendCnt">0</span>）</h2>
+      <div class="grid" id="pendGrid" style="margin-top:12px"></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+
+    <div class="panel">
+      <h2 style="margin-top:0">这一章的排版</h2>
+      <div class="knobs" id="knobs"></div>
+    </div>
+
+    <h2>照片（<span id="cnt">0</span>）</h2>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="bar" id="bar" style="display:none">
+  <span class="state" id="state">未保存</span>
+  <button class="btn ghost" id="btnReload" type="button">重新载入</button>
+  <button class="btn" id="btnSave" type="button">保存修改</button>
+</div>
+
+<script src="photos.js"></script>
+<script>
+(() => {
+  "use strict";
+  const SITE = window.SITE || { chapters: {}, order: [] };
+  const $ = s => document.querySelector(s);
+  let O = null;          // overrides 工作副本
+  let dirty = false;
+  let cur = SITE.order ? SITE.order[0] : "field";
+
+  const api = async (p, opts) => {
+    const r = await fetch(p, Object.assign({ credentials: "same-origin", headers: { "Content-Type": "application/json" } }, opts));
+    let j = {};
+    try { j = await r.json(); } catch {}
+    if (!r.ok) throw new Error(j.error || "请求失败");
+    return j;
+  };
+  const mark = () => { dirty = true; $("#state").textContent = "有未保存的修改"; };
+  const key = (slug, f) => slug + "/" + f;
+  const thumb = (slug, f) => `photos/thumb/${slug}/${encodeURIComponent(f)}`;
+
+  function listFor(slug) {
+    const ch = SITE.chapters[slug];
+    if (!ch) return [];
+    let arr = ch.photos.slice();
+    const hid = new Set(O.hidden || []);
+    const ord = (O.order || {})[slug];
+    if (ord && ord.length) {
+      arr.sort((a, b) => {
+        const ia = ord.indexOf(a.f), ib = ord.indexOf(b.f);
+        return (ia < 0 ? 1e6 : ia) - (ib < 0 ? 1e6 : ib);
+      });
+    }
+    return arr.map(p => ({
+      p,
+      hidden: hid.has(key(slug, p.f)) || (O.hidden || []).includes(slug + "/" + p.f),
+      pick: (O.picks && O.picks[slug]) ? (O.picks[slug] || []).includes(p.f) : p.pick,
+      cap: (O.captions || {})[key(slug, p.f)] || ""
+    }));
+  }
+
+  function renderTabs() {
+    $("#tabs").innerHTML = (SITE.order || []).map(slug => {
+      const ch = SITE.chapters[slug];
+      return `<button class="tab ${slug === cur ? "on" : ""}" data-slug="${slug}" type="button">${ch ? (ch.cn + " " + ch.title) : slug}</button>`;
+    }).join("");
+    $("#tabs").querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+      cur = b.dataset.slug; renderTabs(); renderChapter();
+    }));
+  }
+
+  function renderKnobs() {
+    const ch = SITE.chapters[cur] || {};
+    const c = (O.chapters || {})[cur] || {};
+    const density = c.density || 3;
+    const surfaces = ["green", "blue", "purple", "pink", "orange", "slate"];
+    $("#knobs").innerHTML = `
+      <div class="knob"><label>每行照片</label>
+        <select id="kDensity">
+          ${[2, 3, 4].map(n => `<option value="${n}" ${n === density ? "selected" : ""}>${n} 张</option>`).join("")}
+        </select></div>
+      <div class="knob"><label>主色</label>
+        <select id="kSurface">
+          ${surfaces.map(s => `<option value="${s}" ${s === (c.surface || ch.surface) ? "selected" : ""}>${s}</option>`).join("")}
+        </select></div>
+      <div class="knob"><label>副标题</label>
+        <input id="kNote" value="${(c.note || ch.note || "").replace(/"/g, "&quot;")}" placeholder="例：三下乡 · 支教十天"></div>
+      <div class="knob"><label>首页 Hero 图</label>
+        <input id="kHero" value="${(O.hero || "").replace(/"/g, "&quot;")}" placeholder="scene/_DSC6511-HDR-1.jpg"></div>`;
+
+    $("#kDensity").addEventListener("change", e => {
+      O.chapters[cur] = Object.assign({}, O.chapters[cur] || {}, { density: +e.target.value });
+      mark();
+    });
+    $("#kSurface").addEventListener("change", e => {
+      O.chapters[cur] = Object.assign({}, O.chapters[cur] || {}, { surface: e.target.value });
+      mark();
+    });
+    $("#kNote").addEventListener("input", e => {
+      O.chapters[cur] = Object.assign({}, O.chapters[cur] || {}, { note: e.target.value });
+      mark();
+    });
+    $("#kHero").addEventListener("input", e => { O.hero = e.target.value.trim(); mark(); });
+  }
+
+  function renderChapter() {
+    renderKnobs();
+    const rows = listFor(cur);
+    $("#cnt").textContent = rows.length;
+    $("#grid").innerHTML = rows.map((r, i) => `
+      <div class="card ${r.hidden ? "off" : ""}" data-f="${encodeURIComponent(r.p.f)}" data-i="${i}">
+        <div class="thumb">
+          <img src="${thumb(cur, r.p.f)}" loading="lazy" alt="">
+          ${r.pick ? '<span class="badge">精选</span>' : ""}
+        </div>
+        <div class="ops">
+          <button class="btn tiny ghost" data-act="up" type="button">↑</button>
+          <button class="btn tiny ghost" data-act="down" type="button">↓</button>
+          <button class="btn tiny ghost" data-act="pick" type="button">${r.pick ? "取消精选" : "设为精选"}</button>
+          <button class="btn tiny ghost" data-act="hide" type="button">${r.hidden ? "显示" : "隐藏"}</button>
+          <button class="btn tiny ghost" data-act="del" type="button">删除</button>
+        </div>
+        <div class="cap"><input data-act="cap" value="${r.cap.replace(/"/g, "&quot;")}" placeholder="自定义标题（可空）"></div>
+      </div>`).join("");
+  }
+
+  $("#grid").addEventListener("click", async e => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const act = btn.dataset.act;
+    if (act === "cap") return;
+    const card = e.target.closest(".card");
+    const f = decodeURIComponent(card.dataset.f);
+    const idx = +card.dataset.i;
+    const rows = listFor(cur);
+    const order = rows.map(x => x.p.f);
+
+    if (act === "up" && idx > 0) { [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]]; }
+    if (act === "down" && idx < order.length - 1) { [order[idx + 1], order[idx]] = [order[idx], order[idx + 1]]; }
+    if (act === "up" || act === "down") O.order[cur] = order;
+
+    if (act === "pick") {
+      const set = new Set((O.picks && O.picks[cur]) || SITE.chapters[cur].photos.filter(p => p.pick).map(p => p.f));
+      set.has(f) ? set.delete(f) : set.add(f);
+      O.picks = O.picks || {}; O.picks[cur] = [...set];
+    }
+    if (act === "hide") {
+      const set = new Set(O.hidden || []);
+      const k = key(cur, f);
+      set.has(k) ? set.delete(k) : set.add(k);
+      O.hidden = [...set];
+    }
+    if (act === "del") {
+      if (!confirm("删除这张？文件会移到 photos/_trash（可恢复），并从前端隐藏。")) return;
+      try {
+        await api("/api/admin/trash", { method: "POST", body: JSON.stringify({ slug: cur, file: f }) });
+        const set = new Set(O.hidden || []); set.add(key(cur, f)); O.hidden = [...set];
+        mark(); renderChapter();
+      } catch (err) { alert(err.message); }
+      return;
+    }
+    mark(); renderChapter();
+  });
+
+  $("#grid").addEventListener("input", e => {
+    const inp = e.target.closest('[data-act="cap"]');
+    if (!inp) return;
+    const card = e.target.closest(".card");
+    const f = decodeURIComponent(card.dataset.f);
+    O.captions = O.captions || {};
+    const v = inp.value.trim();
+    if (v) O.captions[key(cur, f)] = v; else delete O.captions[key(cur, f)];
+    mark();
+  });
+
+  /* 登录 / 载入 / 保存 */
+  async function boot() {
+    const s = await api("/api/admin/session").catch(() => ({ admin: false }));
+    if (!s.admin) { $("#login").style.display = "block"; $("#main").classList.remove("on"); $("#bar").style.display = "none"; return; }
+    $("#login").style.display = "none";
+    $("#main").classList.add("on");
+    $("#bar").style.display = "flex";
+    $("#who").textContent = "后台 · 已登录";
+    O = await api("/api/overrides");
+    renderTabs(); renderChapter();
+    $("#state").textContent = "未保存";
+    dirty = false;
+  }
+
+  $("#btnLogin").addEventListener("click", async () => {
+    $("#err").textContent = "";
+    try {
+      await api("/api/admin/login", { method: "POST", body: JSON.stringify({ pass: $("#pass").value }) });
+      boot();
+    } catch (e) { $("#err").textContent = e.message; }
+  });
+  $("#pass").addEventListener("keydown", e => { if (e.key === "Enter") $("#btnLogin").click(); });
+
+  $("#btnSave").addEventListener("click", async () => {
+    try {
+      await api("/api/admin/overrides", { method: "POST", body: JSON.stringify(O) });
+      $("#state").textContent = "已保存 · " + new Date().toLocaleTimeString();
+      dirty = false;
+    } catch (e) { alert(e.message); }
+  });
+  $("#btnReload").addEventListener("click", async () => {
+    if (dirty && !confirm("放弃未保存的修改？")) return;
+    O = await api("/api/overrides");
+    renderTabs(); renderChapter();
+    $("#state").textContent = "已重新载入"; dirty = false;
+  });
+
+  /* ── 待审核投稿 ─────────────────────────────────────── */
+  async function loadPending() {
+    try {
+      const j = await api("/api/uploads?all=1");
+      const list = (j.uploads || []).filter(u => u.status === "pending");
+      const box = $("#pendingPanel"), grid = $("#pendGrid");
+      if (!list.length) { box.style.display = "none"; return; }
+      box.style.display = "block";
+      $("#pendCnt").textContent = list.length;
+      grid.innerHTML = list.map(u => `
+        <div class="card">
+          <div class="thumb"><img src="photos/${u.file}" alt=""></div>
+          <div class="ops">
+            <button class="btn tiny" data-up="approve" data-id="${u.id}" type="button">通过</button>
+            <button class="btn tiny ghost" data-up="reject" data-id="${u.id}" type="button">删除</button>
+          </div>
+          <div class="cap" style="font-size:11px;color:#aaa">${u.title || "未命名"} · ${u.nick}</div>
+        </div>`).join("");
+    } catch {}
+  }
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-up]");
+    if (!b) return;
+    try {
+      await api("/api/admin/upload", { method: "POST", body: JSON.stringify({ id: b.dataset.id, action: b.dataset.up }) });
+      loadPending();
+    } catch (err) { alert(err.message); }
+  });
+
+  boot().then(loadPending);
+})();
+</script>
+</body>
+</html>
