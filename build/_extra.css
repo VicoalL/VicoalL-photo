@@ -333,3 +333,20 @@ body.pano-mode .rail{opacity:0;pointer-events:none}
   .entries{grid-column:1 / -1;grid-template-columns:1fr;gap:12px}
   .entry{padding:22px}
 }
+/* 让背景动画漏出来：内容收窄 + 加大间隙 + 边缘柔化 */
+.grid-wrap{grid-column:3 / 14}
+.ph-row{gap:20px}
+.ph-row.is-indent{width:calc(100% - 100% / 14);margin-left:calc(100% / 14)}
+.ph-grid{-webkit-mask-image:radial-gradient(ellipse 130% 108% at 50% 42%, #000 66%, transparent 100%);
+          mask-image:radial-gradient(ellipse 130% 108% at 50% 42%, #000 66%, transparent 100%)}
+@media (max-width:960px){
+  .grid-wrap{grid-column:1 / -1}
+  .ph-grid{-webkit-mask-image:none;mask-image:none}
+  .ph-row{gap:12px}
+}
+/* 照片默认略透，背景动画能透出来；悬停恢复不透明 */
+.ph-grid .ph.in{opacity:.9}
+.ph-grid .ph:hover,
+.ph-grid .ph:focus-within{opacity:1}
+.pano-item{opacity:.94;transition:opacity .4s var(--ease-soft)}
+.pano-item:hover{opacity:1}
